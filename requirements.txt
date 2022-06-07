@@ -1,0 +1,2 @@
+pandoc==2.2
+textual==0.1.18
