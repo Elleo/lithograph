@@ -24,7 +24,8 @@ from pathlib import Path
 from rich.markdown import Markdown
 from textual import events
 from textual.app import App
-from textual.widgets import Header, Footer, Placeholder, ScrollView, DirectoryTree
+from textual.widgets import Footer, Placeholder, ScrollView, DirectoryTree
+from header import Header
 
 class Lithograph(App):
 
@@ -54,11 +55,18 @@ class Lithograph(App):
 
         home = str(Path.home())
 
+        self.outline = Placeholder(name="Outline")
+        self.open_tree = ScrollView(DirectoryTree(home))
+        self.save_as_tree = ScrollView(DirectoryTree(home))
+
         await self.view.dock(Header(style="white on dark_blue", tall=False, clock=False), edge="top")
         await self.view.dock(Footer(), edge="bottom")
-        await self.view.dock(Placeholder(), edge="left", size=30, name="outline")
-        await self.view.dock(ScrollView(DirectoryTree(home)), edge="left", size=50, name="open")
-        await self.view.dock(ScrollView(DirectoryTree(home)), edge="left", size=50, name="save_as")
+        await self.view.dock(self.outline, edge="left", size=30, name="outline")
+        await self.view.dock(self.open_tree, edge="left", size=50, name="open")
+        await self.view.dock(self.save_as_tree, edge="left", size=50, name="save_as")
+
+        self.outline.visible = False
+        self.save_as_tree.visible = False
 
         # Dock the body in the remaining space
         await self.view.dock(body, edge="right")
@@ -66,7 +74,7 @@ class Lithograph(App):
         async def get_markdown(filename: str) -> None:
             """Convert file to markdown and display"""
             pd = pandoc.read(file=filename)
-            self.app.sub_title = self.get_first_header_title(pd, "")
+            self.app.sub_title = self.get_first_header_title(pd, filename)
             md = Markdown(pandoc.write(pd, format="markdown"))
             await body.update(md)
 
