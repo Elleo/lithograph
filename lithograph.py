@@ -34,6 +34,7 @@ class Lithograph(App):
         """Bind keys with the app loads (but before entering application mode)"""
         await self.bind("b", "view.toggle('outline')", "Toggle outline")
         await self.bind("c", "toggle_clock", "Toggle clock")
+        await self.bind("f", "toggle_fullscreen", "Toggle Fullscreen")
         await self.bind("o", "view.toggle('open')", "Open...")
         await self.bind("s", "save", "Save")
         await self.bind("a", "view.toggle('save_as')", "Save As...")
@@ -50,6 +51,25 @@ class Lithograph(App):
 
     async def action_toggle_clock(self) -> None:
         self.header.clock = not self.header.clock
+
+    async def action_toggle_fullscreen(self) -> None:
+        if self.header.visible:
+            self.header.stored_visibility = self.header.visible
+            self.footer.stored_visibility = self.footer.visible
+            self.outline.stored_visibility = self.outline.visible
+            self.open_tree.stored_visibility = self.open_tree.visible
+            self.save_as_tree.stored_visibility = self.save_as_tree.visible
+            self.header.visible = False
+            self.footer.visible = False
+            self.outline.visible = False
+            self.open_tree.visible = False
+            self.save_as_tree.visible = False
+        else:
+            self.header.visible = self.header.stored_visibility
+            self.footer.visible = self.footer.stored_visibility
+            self.outline.visible = self.outline.stored_visibility
+            self.open_tree.visible = self.open_tree.stored_visibility
+            self.save_as_tree.visible = self.save_as_tree.stored_visibility
 
     async def handle_file_click(self, message: FileClick) -> None:
         """A message sent by the directory tree when a file is clicked."""
