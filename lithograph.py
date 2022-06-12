@@ -24,8 +24,9 @@ from pathlib import Path
 from rich.markdown import Markdown
 from textual import events
 from textual.app import App
-from textual.widgets import Footer, Placeholder, ScrollView, DirectoryTree
-from header import Header
+from textual.widgets import Placeholder, ScrollView, DirectoryTree
+from litho_header import LithoHeader
+from litho_footer import LithoFooter
 
 class Lithograph(App):
 
@@ -55,18 +56,26 @@ class Lithograph(App):
 
         home = str(Path.home())
 
+        document = None
+        if len(sys.argv) > 1:
+            document = sys.argv[1]
+
         self.outline = Placeholder(name="Outline")
         self.open_tree = ScrollView(DirectoryTree(home))
         self.save_as_tree = ScrollView(DirectoryTree(home))
+        self.footer = LithoFooter()
 
-        await self.view.dock(Header(style="white on dark_blue", tall=False, clock=False), edge="top")
-        await self.view.dock(Footer(), edge="bottom")
+        await self.view.dock(LithoHeader(style="white on dark_blue", tall=False, clock=False), edge="top")
+        await self.view.dock(self.footer, edge="bottom")
         await self.view.dock(self.outline, edge="left", size=30, name="outline")
         await self.view.dock(self.open_tree, edge="left", size=50, name="open")
         await self.view.dock(self.save_as_tree, edge="left", size=50, name="save_as")
 
         self.outline.visible = False
         self.save_as_tree.visible = False
+
+        if document is not None:
+            self.open_tree.visible = False
 
         # Dock the body in the remaining space
         await self.view.dock(body, edge="right")
@@ -78,8 +87,12 @@ class Lithograph(App):
             md = Markdown(pandoc.write(pd, format="markdown"))
             await body.update(md)
 
-        # Load our welcome document at start up
-        await self.call_later(get_markdown, "Welcome.md")
+        if document is not None:
+            # Load user specified document
+            await self.call_later(get_markdown, document)
+        else:
+            # Load our welcome document at start up
+            await self.call_later(get_markdown, "Welcome.md")
 
 
 if __name__ == "__main__":
