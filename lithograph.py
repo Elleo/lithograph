@@ -37,7 +37,6 @@ class Lithograph(App):
         await self.bind("s", "save", "Save")
         await self.bind("a", "view.toggle('save_as')", "Save As...")
         await self.bind("q", "quit", "Quit")
-        await self.bind("escape", "quit", "Quit")
 
     def get_first_header_title(self, doc, default=""):
         try:
@@ -64,6 +63,7 @@ class Lithograph(App):
         self.open_tree = ScrollView(DirectoryTree(home))
         self.save_as_tree = ScrollView(DirectoryTree(home))
         self.footer = LithoFooter()
+        self.footer.style = "white on dark_blue"
 
         await self.view.dock(LithoHeader(style="white on dark_blue", tall=False, clock=False), edge="top")
         await self.view.dock(self.footer, edge="bottom")
