@@ -33,6 +33,7 @@ class Lithograph(App):
     async def on_load(self, event: events.Load) -> None:
         """Bind keys with the app loads (but before entering application mode)"""
         await self.bind("b", "view.toggle('outline')", "Toggle outline")
+        await self.bind("c", "toggle_clock", "Toggle clock")
         await self.bind("o", "view.toggle('open')", "Open...")
         await self.bind("s", "save", "Save")
         await self.bind("a", "view.toggle('save_as')", "Save As...")
@@ -46,6 +47,9 @@ class Lithograph(App):
             return pandoc.write(title_inlines)
         except:
             return default
+
+    async def action_toggle_clock(self) -> None:
+        self.header.clock = not self.header.clock
 
     async def on_mount(self, event: events.Mount) -> None:
         """Create and dock the widgets."""
@@ -62,10 +66,11 @@ class Lithograph(App):
         self.outline = Placeholder(name="Outline")
         self.open_tree = ScrollView(DirectoryTree(home))
         self.save_as_tree = ScrollView(DirectoryTree(home))
+        self.header = LithoHeader(style="white on dark_blue", tall=False, clock=False)
         self.footer = LithoFooter()
         self.footer.style = "white on dark_blue"
 
-        await self.view.dock(LithoHeader(style="white on dark_blue", tall=False, clock=False), edge="top")
+        await self.view.dock(self.header, edge="top")
         await self.view.dock(self.footer, edge="bottom")
         await self.view.dock(self.outline, edge="left", size=30, name="outline")
         await self.view.dock(self.open_tree, edge="left", size=50, name="open")
