@@ -24,7 +24,7 @@ from pathlib import Path
 from rich.markdown import Markdown
 from textual import events
 from textual.app import App
-from textual.widgets import Placeholder, ScrollView, DirectoryTree
+from textual.widgets import Placeholder, ScrollView, DirectoryTree, FileClick
 from litho_header import LithoHeader
 from litho_footer import LithoFooter
 
@@ -51,11 +51,18 @@ class Lithograph(App):
     async def action_toggle_clock(self) -> None:
         self.header.clock = not self.header.clock
 
+    async def handle_file_click(self, message: FileClick) -> None:
+        """A message sent by the directory tree when a file is clicked."""
+        if message.sender.name == "open_tree":
+            print("Opening")
+            print(message.path)
+            await self.load_document(message.path)
+
     async def on_mount(self, event: events.Mount) -> None:
         """Create and dock the widgets."""
 
         # A scrollview to contain the markdown file
-        body = ScrollView(gutter=1)
+        self.body = ScrollView(gutter=1)
 
         home = str(Path.home())
 
@@ -64,8 +71,8 @@ class Lithograph(App):
             document = sys.argv[1]
 
         self.outline = Placeholder(name="Outline")
-        self.open_tree = ScrollView(DirectoryTree(home))
-        self.save_as_tree = ScrollView(DirectoryTree(home))
+        self.open_tree = ScrollView(DirectoryTree(home, name="open_tree"))
+        self.save_as_tree = ScrollView(DirectoryTree(home, name="save_as"))
         self.header = LithoHeader(style="white on dark_blue", tall=False, clock=False)
         self.footer = LithoFooter()
         self.footer.style = "white on dark_blue"
@@ -83,21 +90,25 @@ class Lithograph(App):
             self.open_tree.visible = False
 
         # Dock the body in the remaining space
-        await self.view.dock(body, edge="right")
+        await self.view.dock(self.body, edge="right")
 
-        async def get_markdown(filename: str) -> None:
-            """Convert file to markdown and display"""
-            pd = pandoc.read(file=filename)
-            self.app.sub_title = self.get_first_header_title(pd, filename)
-            md = Markdown(pandoc.write(pd, format="markdown"))
-            await body.update(md)
+        async def start_up_load() -> None:
+            if document is not None:
+                # Load user specified document
+                await self.load_document(document)
+            else:
+                # Load our welcome document at start up
+                await self.load_document("Welcome.md")
 
-        if document is not None:
-            # Load user specified document
-            await self.call_later(get_markdown, document)
-        else:
-            # Load our welcome document at start up
-            await self.call_later(get_markdown, "Welcome.md")
+        await self.call_later(start_up_load)
+
+    async def load_document(self, filename: str) -> None:
+        """Convert file to markdown and display"""
+        pd = pandoc.read(file=filename)
+        self.app.sub_title = self.get_first_header_title(pd, filename)
+        md = Markdown(pandoc.write(pd, format="markdown"))
+        await self.body.update(md)
+
 
 
 if __name__ == "__main__":
