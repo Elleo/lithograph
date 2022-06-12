@@ -124,10 +124,13 @@ class Lithograph(App):
 
     async def load_document(self, filename: str) -> None:
         """Convert file to markdown and display"""
-        pd = pandoc.read(file=filename)
-        self.app.sub_title = self.get_first_header_title(pd, filename)
-        md = Markdown(pandoc.write(pd, format="markdown"))
-        await self.body.update(md)
+        try:
+            pd = pandoc.read(file=filename)
+            self.app.sub_title = self.get_first_header_title(pd, filename)
+            md = Markdown(pandoc.write(pd, format="markdown"))
+            await self.body.update(md)
+        except:
+            await self.body.update("Sorry, unable to load file.")
 
 
 
