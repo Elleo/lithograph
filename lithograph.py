@@ -24,9 +24,12 @@ from pathlib import Path
 from rich.markdown import Markdown
 from textual import events
 from textual.app import App
-from textual.widgets import Placeholder, ScrollView, DirectoryTree, FileClick
+from textual.widgets import Placeholder, ScrollView, FileClick
 from litho_header import LithoHeader
 from litho_footer import LithoFooter
+from litho_directory_tree import LithoDirectoryTree
+
+ACCEPTED_EXTENSIONS = "^(.*\.(txt|docx|odt|md|htm|html|epub|json|latex|tex|xml|opml|rst|log)|[^\.]*)$"
 
 class Lithograph(App):
 
@@ -91,8 +94,8 @@ class Lithograph(App):
             document = sys.argv[1]
 
         self.outline = Placeholder(name="Outline")
-        self.open_tree = ScrollView(DirectoryTree(home, name="open_tree"))
-        self.save_as_tree = ScrollView(DirectoryTree(home, name="save_as"))
+        self.open_tree = ScrollView(LithoDirectoryTree(home, name="open_tree", file_filter=ACCEPTED_EXTENSIONS))
+        self.save_as_tree = ScrollView(LithoDirectoryTree(home, name="save_as", file_filter=ACCEPTED_EXTENSIONS))
         self.header = LithoHeader(style="white on dark_blue", tall=False, clock=False)
         self.footer = LithoFooter()
         self.footer.style = "white on dark_blue"
