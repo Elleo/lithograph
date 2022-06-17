@@ -22,26 +22,41 @@ import pandoc
 from pandoc.types import *
 from pathlib import Path
 from rich.markdown import Markdown
+from rich.console import RenderableType
 from textual import events
 from textual.app import App
-from textual.widgets import Placeholder, ScrollView, FileClick
+from textual.widget import Widget
+from textual.widgets import Placeholder, FileClick, Header, Footer
 from litho_header import LithoHeader
 from litho_footer import LithoFooter
 from litho_directory_tree import LithoDirectoryTree
 
 ACCEPTED_EXTENSIONS = "^(.*\.(txt|docx|odt|md|htm|html|epub|json|latex|tex|xml|opml|rst|log)|[^\.]*)$"
 
-class Lithograph(App):
+class TextDisplay(Widget):
 
-    async def on_load(self, event: events.Load) -> None:
+    text = ""
+
+    def render(self) -> RenderableType:
+        return Markdown(self.text)
+
+    def update(text: str) -> None:
+        self.text = text
+        self.render()
+
+class Lithograph(App, css_path="lithograph.css"):
+
+    dark = True
+
+    def on_load(self, event: events.Load) -> None:
         """Bind keys with the app loads (but before entering application mode)"""
-        await self.bind("b", "view.toggle('outline')", "Toggle outline")
-        await self.bind("c", "toggle_clock", "Toggle clock")
-        await self.bind("f", "toggle_fullscreen", "Toggle Fullscreen")
-        await self.bind("o", "view.toggle('open')", "Open...")
-        await self.bind("s", "save", "Save")
-        await self.bind("a", "view.toggle('save_as')", "Save As...")
-        await self.bind("q", "quit", "Quit")
+        self.bind("b", "toggle_class('#outline', '-active')", "Toggle outline")
+        self.bind("c", "toggle_clock", "Toggle clock")
+        self.bind("f", "toggle_fullscreen", "Toggle Fullscreen")
+        self.bind("o", "toggle_class('#open', '-active')", "Open...")
+        self.bind("s", "save", "Save")
+        self.bind("a", "toggle_class('#saveas', '-active')", "Save As...")
+        self.bind("q", "quit", "Quit")
 
     def get_first_header_title(self, doc, default=""):
         try:
@@ -84,8 +99,7 @@ class Lithograph(App):
     async def on_mount(self, event: events.Mount) -> None:
         """Create and dock the widgets."""
 
-        # A scrollview to contain the markdown file
-        self.body = ScrollView(gutter=1)
+        self.body = TextDisplay()
 
         home = str(Path.home())
 
@@ -93,37 +107,45 @@ class Lithograph(App):
         if len(sys.argv) > 1:
             document = sys.argv[1]
 
-        self.outline = Placeholder(name="Outline")
-        self.open_tree = ScrollView(LithoDirectoryTree(home, name="open_tree", file_filter=ACCEPTED_EXTENSIONS))
-        self.save_as_tree = ScrollView(LithoDirectoryTree(home, name="save_as", file_filter=ACCEPTED_EXTENSIONS))
+        self.outline = Placeholder(name="Outline", classes="outline")
+#        self.open_tree = LithoDirectoryTree(home, name="open_tree", classes="open", file_filter=ACCEPTED_EXTENSIONS)
+#        self.save_as_tree = LithoDirectoryTree(home, name="save_as", classes="saveas", file_filter=ACCEPTED_EXTENSIONS)
+        self.open_tree = Placeholder(name="Open", classes="open")
+        self.save_as_tree = Placeholder(name="Save As", classes="saveas")
         self.header = LithoHeader(style="white on dark_blue", tall=False, clock=False)
         self.footer = LithoFooter()
         self.footer.style = "white on dark_blue"
 
-        await self.view.dock(self.header, edge="top")
-        await self.view.dock(self.footer, edge="bottom")
-        await self.view.dock(self.outline, edge="left", size=30, name="outline")
-        await self.view.dock(self.open_tree, edge="left", size=50, name="open")
-        await self.view.dock(self.save_as_tree, edge="left", size=50, name="save_as")
+#        await self.view.dock(self.header, edge="top")
+#        await self.view.dock(self.footer, edge="bottom")
+#        await self.view.dock(self.outline, edge="left", size=30, name="outline")
+#        await self.view.dock(self.open_tree, edge="left", size=50, name="open")
+#        await self.view.dock(self.save_as_tree, edge="left", size=50, name="save_as")
 
-        self.outline.visible = False
-        self.save_as_tree.visible = False
+        self.mount(
+                header=self.header,
+                content=self.body,
+                footer=self.footer,
+                outline=self.outline,
+                open=self.open_tree,
+                saveas=self.save_as_tree
+        )
 
-        if document is not None:
-            self.open_tree.visible = False
+#        self.outline.visible = False
+#        self.save_as_tree.visible = False
+
+#        if document is not None:
+#            self.open_tree.visible = False
 
         # Dock the body in the remaining space
-        await self.view.dock(self.body, edge="right")
+#        await self.view.dock(self.body, edge="right")
 
-        async def start_up_load() -> None:
-            if document is not None:
-                # Load user specified document
-                await self.load_document(document)
-            else:
-                # Load our welcome document at start up
-                await self.load_document("Welcome.md")
-
-        await self.call_later(start_up_load)
+        if document is not None:
+            # Load user specified document
+            self.load_document(document)
+        else:
+            # Load our welcome document at start up
+            self.load_document("Welcome.md")
 
     async def load_document(self, filename: str) -> None:
         """Convert file to markdown and display"""
@@ -138,4 +160,5 @@ class Lithograph(App):
 
 
 if __name__ == "__main__":
-    Lithograph.run(title="Lithograph", log="lithograph.log")
+    app = Lithograph()
+    app.run()
