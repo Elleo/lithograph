@@ -6,15 +6,10 @@ from textual.widgets._directory_tree import DirEntry
 class LithoDirectoryTree(DirectoryTree):
 
     file_filter = ".*"
-    _id = None
-    _name = "dirtree"
-    _classes = ""
 
-    def __init__(self, path: str, name: str = None, classes: str = None, file_filter: str = ".*") -> None:
+    def __init__(self, path: str, name: str = None, id: str = None, classes: str = None, file_filter: str = ".*") -> None:
         self.file_filter=file_filter
-        self._name = name
-        self._classes = classes
-        super().__init__(path, name)
+        super().__init__(path, name=name, id=id, classes=classes)
 
     async def load_directory(self, node: TreeNode[DirEntry]):
         path = node.data.path
