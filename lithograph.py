@@ -83,8 +83,6 @@ class Lithograph(App, css_path="lithograph.css"):
     async def handle_file_click(self, message: FileClick) -> None:
         """A message sent by the directory tree when a file is clicked."""
         if message.sender.name == "open_tree":
-            print("Opening")
-            print(message.path)
             await self.load_document(message.path)
 
     async def on_mount(self, event: events.Mount) -> None:
@@ -103,13 +101,6 @@ class Lithograph(App, css_path="lithograph.css"):
         self.save_as_tree = LithoDirectoryTree(home, name="save_as", classes="saveas", file_filter=ACCEPTED_EXTENSIONS)
         self.header = LithoHeader(style="white on dark_blue", tall=False, clock=False)
         self.footer = LithoFooter()
-        self.footer.style = "white on dark_blue"
-
-#        await self.view.dock(self.header, edge="top")
-#        await self.view.dock(self.footer, edge="bottom")
-#        await self.view.dock(self.outline, edge="left", size=30, name="outline")
-#        await self.view.dock(self.open_tree, edge="left", size=50, name="open")
-#        await self.view.dock(self.save_as_tree, edge="left", size=50, name="save_as")
 
         self.mount(
                 header=self.header,
