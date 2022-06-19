@@ -26,23 +26,14 @@ from rich.console import RenderableType
 from textual import events
 from textual.app import App
 from textual.widget import Widget
-from textual.widgets import Placeholder, FileClick, Header, Footer
+from textual.widgets import Placeholder, FileClick, Header, Footer, Static
+from textual.widgets.text_input import TextArea
 from litho_header import LithoHeader
 from litho_footer import LithoFooter
 from litho_directory_tree import LithoDirectoryTree
 
 ACCEPTED_EXTENSIONS = "^(.*\.(txt|docx|odt|md|htm|html|epub|json|latex|tex|xml|opml|rst|log)|[^\.]*)$"
 
-class TextDisplay(Widget):
-
-    text = ""
-
-    def render(self) -> RenderableType:
-        return Markdown(self.text)
-
-    def update(text: str) -> None:
-        self.text = text
-        self.render()
 
 class Lithograph(App, css_path="lithograph.css"):
 
@@ -99,7 +90,7 @@ class Lithograph(App, css_path="lithograph.css"):
     async def on_mount(self, event: events.Mount) -> None:
         """Create and dock the widgets."""
 
-        self.body = TextDisplay()
+        self.body = Static()
 
         home = str(Path.home())
 
@@ -108,10 +99,8 @@ class Lithograph(App, css_path="lithograph.css"):
             document = sys.argv[1]
 
         self.outline = Placeholder(name="Outline", classes="outline")
-#        self.open_tree = LithoDirectoryTree(home, name="open_tree", classes="open", file_filter=ACCEPTED_EXTENSIONS)
-#        self.save_as_tree = LithoDirectoryTree(home, name="save_as", classes="saveas", file_filter=ACCEPTED_EXTENSIONS)
-        self.open_tree = Placeholder(name="Open", classes="open")
-        self.save_as_tree = Placeholder(name="Save As", classes="saveas")
+        self.open_tree = LithoDirectoryTree(home, name="open_tree", classes="open", file_filter=ACCEPTED_EXTENSIONS)
+        self.save_as_tree = LithoDirectoryTree(home, name="save_as", classes="saveas", file_filter=ACCEPTED_EXTENSIONS)
         self.header = LithoHeader(style="white on dark_blue", tall=False, clock=False)
         self.footer = LithoFooter()
         self.footer.style = "white on dark_blue"
@@ -131,21 +120,15 @@ class Lithograph(App, css_path="lithograph.css"):
                 saveas=self.save_as_tree
         )
 
-#        self.outline.visible = False
-#        self.save_as_tree.visible = False
-
-#        if document is not None:
-#            self.open_tree.visible = False
-
-        # Dock the body in the remaining space
-#        await self.view.dock(self.body, edge="right")
+        if document is None:
+            self.open_tree.toggle_class("-active")
 
         if document is not None:
             # Load user specified document
-            self.load_document(document)
+            await self.load_document(document)
         else:
             # Load our welcome document at start up
-            self.load_document("Welcome.md")
+            await self.load_document("Welcome.md")
 
     async def load_document(self, filename: str) -> None:
         """Convert file to markdown and display"""
@@ -153,9 +136,9 @@ class Lithograph(App, css_path="lithograph.css"):
             pd = pandoc.read(file=filename)
             self.app.sub_title = self.get_first_header_title(pd, filename)
             md = Markdown(pandoc.write(pd, format="markdown"))
-            await self.body.update(md)
+            self.body.update(md)
         except:
-            await self.body.update("Sorry, unable to load file.")
+            self.body.update("Sorry, unable to load file.")
 
 
 
